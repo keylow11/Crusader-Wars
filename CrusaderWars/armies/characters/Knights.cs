@@ -59,6 +59,8 @@ namespace CrusaderWars
 
         public string GetName() { return Name; }
         public string GetID() { return ID; }
+        /// <summary>True when this knight holds an AGOT Kingsguard seat in the save being fought.</summary>
+        public bool IsKingsguard => CrusaderWars.data.save_file.KingsguardScanner.IsMember(ID);
         public string GetCultureName() { return CultureObj?.GetCultureName() ?? "unknown_culture"; }
         public string GetHeritageName() { return CultureObj?.GetHeritageName() ?? "unknown_heritage"; }
         public Culture GetCultureObj() { return CultureObj; }

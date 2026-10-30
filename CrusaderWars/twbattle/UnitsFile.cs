@@ -202,6 +202,19 @@ namespace CrusaderWars
                 knights_unit.SetAttilaFaction(UnitMappers_BETA.GetAttilaFaction(knights_unit.GetCulture(), knights_unit.GetHeritage()));
                 var (knightKey, isSiegeKnight) = UnitMappers_BETA.GetUnitKey(knights_unit);
 
+                // AGOT: when this army's knights include Kingsguard, use the mapper's Kingsguard unit if it has one.
+                int kingsguardCount = knightSystem.GetKnightsList().Count(k => k.IsKingsguard);
+                if (kingsguardCount > 0)
+                {
+                    string? kingsguardKey = UnitMappers_BETA.GetKingsguardUnitKey(knights_unit.GetAttilaFaction());
+                    if (!string.IsNullOrEmpty(kingsguardKey))
+                    {
+                        knightKey = kingsguardKey!;
+                        isSiegeKnight = false;
+                    }
+                    Program.Logger.Debug($"Kingsguard: army {army.ID} fields {kingsguardCount} Kingsguard knight(s); knight unit key '{knightKey}'.");
+                }
+
                 if (twbattle.BattleProcessor.AutofixReplacements.TryGetValue(knightKey, out var replacement))
                 {
                     knightKey = replacement.replacementKey;

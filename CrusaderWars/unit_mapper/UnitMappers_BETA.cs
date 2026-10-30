@@ -2853,5 +2853,57 @@ namespace CrusaderWars.unit_mapper
 
             return null; // Not found
         }
+
+        /// <summary>The MenAtArm type a mapper uses to name the AGOT Kingsguard unit.</summary>
+        public const string KINGSGUARD_MAA_TYPE = "agot_kingsguard";
+
+        /// <summary>
+        /// Returns the Attila unit key a mapper assigns to the AGOT Kingsguard, through a
+        /// &lt;MenAtArm type="agot_kingsguard" key="..."/&gt; entry in the given faction or in
+        /// "Default". Returns null when the loaded mapper has none, so the caller keeps the
+        /// normal knight unit.
+        /// </summary>
+        public static string? GetKingsguardUnitKey(string? attilaFaction)
+        {
+            if (LoadedUnitMapper_FolderPath == null) return null;
+            string factions_folder_path = LoadedUnitMapper_FolderPath + @"\Factions";
+            if (!Directory.Exists(factions_folder_path)) return null;
+
+            string priorityFilePattern = !string.IsNullOrEmpty(ActivePlaythroughTag) ? $"OfficialCC_{ActivePlaythroughTag}_*" : string.Empty;
+            var files_paths = GetSortedFilePaths(factions_folder_path, priorityFilePattern);
+            files_paths.Reverse(); // Last-loaded files win, same as other lookups
+
+            foreach (var factionName in new[] { attilaFaction, "Default" })
+            {
+                if (string.IsNullOrEmpty(factionName)) continue;
+                foreach (var xml_file in files_paths)
+                {
+                    try
+                    {
+                        XmlDocument doc = new XmlDocument();
+                        doc.Load(xml_file);
+                        if (doc.DocumentElement == null) continue;
+                        foreach (XmlNode faction in doc.DocumentElement.SelectNodes("Faction"))
+                        {
+                            if (!string.Equals(faction.Attributes?["name"]?.Value, factionName, StringComparison.OrdinalIgnoreCase)) continue;
+                            foreach (XmlNode maa in faction.SelectNodes("MenAtArm"))
+                            {
+                                if (maa.Attributes?["type"]?.Value == KINGSGUARD_MAA_TYPE
+                                    && maa.Attributes?["key"]?.Value is string key && key.Length > 0)
+                                {
+                                    Program.Logger.Debug($"Kingsguard: using unit '{key}' from faction '{factionName}' in '{Path.GetFileName(xml_file)}'.");
+                                    return key;
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Program.Logger.Debug($"Error reading faction file '{Path.GetFileName(xml_file)}' in GetKingsguardUnitKey: {ex.Message}");
+                    }
+                }
+            }
+            return null;
+        }
     }
 }

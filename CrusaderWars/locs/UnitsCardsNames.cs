@@ -15,6 +15,25 @@ namespace CrusaderWars.locs
 {
     static class UnitsCardsNames
     {
+        /// <summary>
+        /// Card name for the combined knights unit: "Knights (A | B | ...)", or
+        /// "Kingsguard (...)" when AGOT Kingsguard ride in it, Lord Commander first.
+        /// </summary>
+        static string CombinedKnightsLabel(List<Knight>? knights)
+        {
+            if (knights == null) knights = new List<Knight>();
+            var kingsguard = knights.Where(k => k.IsKingsguard)
+                                    .OrderByDescending(k => KingsguardScanner.IsLordCommander(k.GetID()))
+                                    .ThenByDescending(k => k.GetProwess());
+            var others = knights.Where(k => !k.IsKingsguard).OrderByDescending(k => k.GetProwess());
+            var ordered = kingsguard.Concat(others).ToList();
+
+            var names = ordered.Select(k => k.GetName()).Take(5).ToList();
+            if (ordered.Count > 5) names.Add("etc...");
+            string label = ordered.Any(k => k.IsKingsguard) ? "Kingsguard" : "Knights";
+            return $"{label} ({string.Join(" | ", names)})";
+        }
+
         static List<string> default_text_files = new List<string>()
         {
             "CW_special_ability_phases.loc",
@@ -235,14 +254,7 @@ namespace CrusaderWars.locs
                                         // Combined Unit
                                         if (unitToApply.GetName() == "Knight")
                                         {
-                                            var knightsInUnit = army.Knights?.GetKnightsList()?.OrderByDescending(k => k.GetProwess()).ToList() ?? new List<Knight>();
-                                            var knightNames = knightsInUnit.Select(k => k.GetName()).Take(5).ToList();
-                                            if (knightsInUnit.Count > 5)
-                                            {
-                                                knightNames.Add("etc...");
-                                            }
-                                            string knightList = string.Join(" | ", knightNames);
-                                            newName = $"Knights ({knightList}){commanderNameSuffix}";
+                                            newName = $"{CombinedKnightsLabel(army.Knights?.GetKnightsList())}{commanderNameSuffix}";
                                         }
                                         // Bodyguard Unit
                                         else
@@ -526,14 +538,7 @@ namespace CrusaderWars.locs
                 case RegimentType.Knight:
                     if (ModOptions.CombineKnightsEnabled())
                     {
-                        var knightsInUnit = army.Knights?.GetKnightsList()?.OrderByDescending(k => k.GetProwess()).ToList() ?? new List<Knight>();
-                        var knightNames = knightsInUnit.Select(k => k.GetName()).Take(5).ToList();
-                        if (knightsInUnit.Count > 5)
-                        {
-                            knightNames.Add("etc...");
-                        }
-                        string knightList = string.Join(" | ", knightNames);
-                        return $"Knights ({knightList}){commanderNameSuffix}";
+                        return $"{CombinedKnightsLabel(army.Knights?.GetKnightsList())}{commanderNameSuffix}";
                     }
                     else
                     {

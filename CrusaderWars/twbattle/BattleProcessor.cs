@@ -1430,8 +1430,10 @@ namespace CrusaderWars.twbattle
 
                 if (!armyKnights.Any()) continue;
 
-                // Sort knights by prowess (highest first) to assign best knights to MAA
-                var sortedKnights = armyKnights.OrderByDescending(k => k.GetProwess()).ToList();
+                // Sort knights by prowess (highest first) to assign best knights to MAA.
+                // AGOT Kingsguard stay with their king as one unit, so they never lead MAA.
+                var sortedKnights = armyKnights.Where(k => !k.IsKingsguard)
+                                               .OrderByDescending(k => k.GetProwess()).ToList();
 
                 // Find MAA units that could be led by knights
                 var maaUnits = army.Units.Where(u => u.GetRegimentType() == RegimentType.MenAtArms).ToList();

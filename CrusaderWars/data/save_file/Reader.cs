@@ -182,6 +182,7 @@ namespace CrusaderWars.data.save_file
             // Data.Reset(); // Reset all static data containers and extraction flags -- REMOVED as per plan
             Program.Logger.Debug("Previous save data cleared.");
             long startMemoryt = GC.GetTotalMemory(false);
+            KingsguardScanner.Reset();
 
             using (FileStream saveFile = File.Open(savePath, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite))
             using (StreamReader reader = new StreamReader(saveFile))
@@ -226,7 +227,9 @@ namespace CrusaderWars.data.save_file
                     SearchKeys.Wars(line);
                     SearchKeys.VassalContracts(line);
                     SearchKeys.Opinions(line);
+                    KingsguardScanner.ScanLine(line);
                 }
+                KingsguardScanner.Finish();
                 long endMemoryt = GC.GetTotalMemory(false);
                 long memoryUsaget = endMemoryt - startMemoryt;
                 Program.Logger.Debug($"Finished reading save file. Memory Usage: {memoryUsaget / 1048576} megabytes");
