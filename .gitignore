@@ -363,3 +363,13 @@ MigrationBackup/
 FodyWeavers.xsd
 
 debug/*
+# === Claude Code Game Studios (local/runtime files) ===
+.claude/settings.local.json
+CLAUDE.local.md
+project.local.yaml
+production/session-logs/
+production/session-state/
+.scratch/
+.claude/agent-memory/
+.claude/worktrees/
+docs/consistency-failures.md
