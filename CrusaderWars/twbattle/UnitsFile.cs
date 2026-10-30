@@ -245,6 +245,30 @@ namespace CrusaderWars
 
 
             //##################
+            //                 #
+            //     DRAGONS     #
+            //                 #
+            //##################
+            army.Units.RemoveAll(u => u.GetRegimentType() == RegimentType.Dragon);
+            foreach (var rider in DragonSystem.GetRiders(army))
+            {
+                var dragonCulture = rider.culture ?? army.Owner.GetCulture();
+                Unit dragon_unit = new Unit(DragonSystem.UNIT_NAME, DragonSystem.GetSoldiers(), dragonCulture, RegimentType.Dragon, false, army.Owner, 0);
+                dragon_unit.SetCharacterID(rider.id);
+                dragon_unit.SetLocName(rider.name);
+                dragon_unit.SetAttilaFaction(UnitMappers_BETA.GetAttilaFaction(dragon_unit.GetCulture(), dragon_unit.GetHeritage()));
+                dragon_unit.SetUnitKey(DragonSystem.GetUnitKey());
+                dragon_unit.SetOriginalAttilaKey(DragonSystem.GetUnitKey());
+
+                army.Units.Add(dragon_unit);
+                string dragon_script_name = $"{i}_{army.CombatSide}_army{army.ID}_TYPE{DragonSystem.SCRIPT_TYPE_PREFIX}{rider.id}_{dragon_unit.UniqueID}_CULTURE{dragonCulture?.ID ?? "unknown"}_";
+                BattleFile.AddDragonUnit(dragon_unit.GetAttilaUnitKey(), dragon_unit.GetSoldiers(), dragon_script_name, DragonSystem.GetExperience(), Deployments.beta_GeDirection(army.CombatSide));
+                Program.Logger.Debug($"  - Added dragon of {rider.name} ({rider.id}) as unit '{dragon_unit.GetAttilaUnitKey()}'.");
+                i++;
+            }
+
+
+            //##################
             //     ARMY XP     #
             //##################
             if (army.IsPlayer())

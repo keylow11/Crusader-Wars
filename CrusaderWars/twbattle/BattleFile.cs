@@ -1305,6 +1305,42 @@ namespace CrusaderWars
                 Position.AddUnitXSpacing(direction);
         }
 
+        public static void AddDragonUnit(string troopType, int numberOfSoldiers, string unitScript, int experience, string direction)
+        {
+            if (Position == null)
+            {
+                Program.Logger.Debug("CRITICAL: BattleFile.Position was null when trying to add a unit. Aborting unit addition.");
+                return;
+            }
+
+            if (numberOfSoldiers < 1) return;
+
+            if (experience < 0) experience = 0;
+            if (experience > 9) experience = 9;
+
+            Unit_Script_Name = unitScript + "0";
+
+            var prUnitBuilder = new StringBuilder();
+            prUnitBuilder.Append($"<unit num_soldiers= \"{numberOfSoldiers}\" script_name= \"{Unit_Script_Name}\">\n");
+            prUnitBuilder.Append($"<unit_type type=\"{troopType}\"/>\n");
+            prUnitBuilder.Append($"<position x=\"{Position.X}\" y=\"{Position.Y}\"/>\n");
+            prUnitBuilder.Append($"<orientation radians=\"{Rotation}\"/>\n");
+            prUnitBuilder.Append("<width metres=\"21.70\"/>\n");
+            prUnitBuilder.Append($"<unit_experience level=\"{experience}\"/>\n");
+            prUnitBuilder.Append("</unit>\n\n");
+
+            //Add horizontal spacing between units
+            if (direction is "N" || direction is "S")
+                Position.AddUnitXSpacing(direction);
+            else
+                Position.AddUnitYSpacing(direction);
+
+            DeclarationsFile.AddUnitDeclaration("UNIT" + Unit_Script_Name, Unit_Script_Name);
+            BattleScript.SetLocals(Unit_Script_Name, "UNIT" + Unit_Script_Name);
+            Data.units_scripts.Add((Unit_Script_Name, "UNIT" + Unit_Script_Name));
+            File.AppendAllText(battlePath, prUnitBuilder.ToString());
+        }
+
         private static void AddAssaultEquipment(Dictionary<string, int> siegeEngines)
         {
             Program.Logger.Debug($"Adding {siegeEngines.Count} types of assault equipment.");

@@ -1033,6 +1033,7 @@ namespace CrusaderWars.twbattle
                     int originalTotalAttackerSoldiers = attacker_armies.Sum(a => a.GetTotalSoldiers());
 
                     //  SET CASUALITIES
+                    DragonSystem.ResetBattleResults();
                     Program.Logger.Debug("Setting casualties for attacker armies...");
                     foreach (var army in attacker_armies)
                     {
@@ -1041,6 +1042,7 @@ namespace CrusaderWars.twbattle
                         CasualtyProcessor.CheckForSlainCommanders(army, path_log_attila);
                         CasualtyProcessor.CheckKnightsKills(army);
                         CasualtyProcessor.CheckForSlainKnights(army);
+                        CasualtyProcessor.CheckForSlainDragons(army);
                     }
                     Program.Logger.Debug("Setting casualties for defender armies...");
                     foreach (var army in defender_armies)
@@ -1050,6 +1052,7 @@ namespace CrusaderWars.twbattle
                         CasualtyProcessor.CheckForSlainCommanders(army, path_log_attila);
                         CasualtyProcessor.CheckKnightsKills(army);
                         CasualtyProcessor.CheckForSlainKnights(army);
+                        CasualtyProcessor.CheckForSlainDragons(army);
 
                     }
 
@@ -1431,7 +1434,8 @@ namespace CrusaderWars.twbattle
                 if (!armyKnights.Any()) continue;
 
                 // Sort knights by prowess (highest first) to assign best knights to MAA
-                var sortedKnights = armyKnights.OrderByDescending(k => k.GetProwess()).ToList();
+                // Dragon riders fight on their dragon, so they never lead MAA
+                var sortedKnights = armyKnights.Where(k => !DragonSystem.IsRider(k)).OrderByDescending(k => k.GetProwess()).ToList();
 
                 // Find MAA units that could be led by knights
                 var maaUnits = army.Units.Where(u => u.GetRegimentType() == RegimentType.MenAtArms).ToList();

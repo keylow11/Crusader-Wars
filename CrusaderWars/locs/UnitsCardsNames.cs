@@ -268,6 +268,12 @@ namespace CrusaderWars.locs
                                         }
                                         shouldReplace = true;
                                     }
+                                    //Dragons
+                                    else if (unitToApply.GetRegimentType() == RegimentType.Dragon)
+                                    {
+                                        newName = $"Dragon ({unitToApply.GetLocName()}){commanderNameSuffix}";
+                                        shouldReplace = true;
+                                    }
                                     //Levies
                                     else if (unitToApply.GetRegimentType() == RegimentType.Levy)
                                     {
@@ -577,6 +583,8 @@ namespace CrusaderWars.locs
                         return $"Garrison {friendlyGarrisonName}{commanderNameSuffix}";
                     }
                     return $"Garrison {garrisonOriginalName}{commanderNameSuffix}"; // Fallback
+                case RegimentType.Dragon:
+                    return $"Dragon ({unit.GetLocName()}){commanderNameSuffix}";
                 default:
                     return unit.GetName();
             }

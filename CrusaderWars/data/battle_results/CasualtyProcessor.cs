@@ -336,6 +336,10 @@ namespace CrusaderWars.data.battle_results
                 {
                     unitType = RegimentType.Garrison;
                 }
+                else if (typeIdentifier.StartsWith(DragonSystem.SCRIPT_TYPE_PREFIX))
+                {
+                    unitType = RegimentType.Dragon;
+                }
                 else if (typeIdentifier.Contains("commander"))
                 {
                     unitType = RegimentType.Commander;
@@ -424,6 +428,11 @@ namespace CrusaderWars.data.battle_results
                 {
                     startingMachines = matchingUnit.GetOriginalSoldiers();
                     starting = unit_mapper.UnitMappers_BETA.ConvertMachinesToMen(startingMachines);
+                }
+                else if (unitType == RegimentType.Dragon)
+                {
+                    // Dragons are deployed at their configured size, not scaled by battle scale
+                    starting = matchingUnit.GetOriginalSoldiers();
                 }
                 else
                 {
@@ -555,6 +564,12 @@ namespace CrusaderWars.data.battle_results
             {
                 Program.Logger.Debug($"Knight {knight.GetID()} ({knight.GetName()}) in army {army.ID} has fallen.");
             }
+        }
+
+        public static void CheckForSlainDragons(Army army)
+        {
+            Program.Logger.Debug($"Checking for slain dragons in army {army.ID}");
+            DragonSystem.CheckForSlainDragons(army);
         }
 
         public static void CheckKnightsKills(Army army)

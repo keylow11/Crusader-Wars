@@ -400,6 +400,7 @@ namespace CrusaderWars.unit_mapper
 
         // Fix for CS8602 and CS8600
         public static string? GetLoadedUnitMapperName() { return LoadedUnitMapper_FolderPath is string path ? Path.GetFileName(path) : null; }
+        public static string? GetLoadedUnitMapperPath() { return LoadedUnitMapper_FolderPath; }
         public static string? GetLoadedUnitMapperString()
         {
             switch (GetLoadedUnitMapperName())

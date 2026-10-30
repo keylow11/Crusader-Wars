@@ -469,11 +469,121 @@ namespace CrusaderWars.data.battle_results
                                     }
                                 }
                             }
+
+                            // A rider whose dragon was slain may die in the fall
+                            if (DragonSystem.LostDragon(char_id))
+                            {
+                                DragonSystem.ReadDragonCharacterID(char_id, charBlock);
+
+                                if (DragonSystem.ShouldRiderDie(char_id))
+                                {
+                                    bool alreadySlain = (searchData.isCommander && searchData.commander != null && searchData.commander.IsSlain) ||
+                                                        (searchData.isKnight && searchData.knight != null && searchData.knight.IsSlain);
+                                    if (searchData.isCommander && searchData.commander != null)
+                                    {
+                                        searchData.commander.IsSlain = true;
+                                        searchData.commander.IsPrisoner = false;
+                                    }
+                                    else if (searchData.isKnight && searchData.knight != null)
+                                    {
+                                        searchData.knight.SetHasFallen(true);
+                                        searchData.knight.IsSlain = true;
+                                        searchData.knight.IsPrisoner = false;
+                                    }
+
+                                    if (!alreadySlain)
+                                    {
+                                        Program.Logger.Debug($"Rider {char_id} was slain when their dragon fell.");
+                                        ExtractSuccessionData(char_id, charBlock);
+                                    }
+                                }
+                            }
                         }
                     }
                 }
             }
             Program.Logger.Debug("Finished determining character fates.");
+        }
+
+        /// <summary>
+        /// Turns a living character block into a dead one: removes landed, court, playable and alive data and adds dead_data.
+        /// </summary>
+        internal static void MarkCharacterBlockAsDead(List<string> charBlock)
+        {
+            // Remove landed_data
+            int landedIdx = charBlock.FindIndex(l => l.Trim() == "landed_data={");
+            if (landedIdx != -1)
+            {
+                int bCount = 0;
+                int endIdx = -1;
+                for (int i = landedIdx; i < charBlock.Count; i++)
+                {
+                    bCount += charBlock[i].Count(c => c == '{');
+                    bCount -= charBlock[i].Count(c => c == '}');
+                    if (bCount == 0) { endIdx = i; break; }
+                }
+                if (endIdx != -1) charBlock.RemoveRange(landedIdx, endIdx - landedIdx + 1);
+            }
+
+            // Remove court_data
+            int courtIdx = charBlock.FindIndex(l => l.Trim() == "court_data={");
+            if (courtIdx != -1)
+            {
+                int bCount = 0;
+                int endIdx = -1;
+                for (int i = courtIdx; i < charBlock.Count; i++)
+                {
+                    bCount += charBlock[i].Count(c => c == '{');
+                    bCount -= charBlock[i].Count(c => c == '}');
+                    if (bCount == 0) { endIdx = i; break; }
+                }
+                if (endIdx != -1) charBlock.RemoveRange(courtIdx, endIdx - courtIdx + 1);
+            }
+
+            // Remove playable_data
+            int playableIdx = charBlock.FindIndex(l => l.Trim() == "playable_data={");
+            if (playableIdx != -1)
+            {
+                int bCount = 0;
+                int endIdx = -1;
+                for (int i = playableIdx; i < charBlock.Count; i++)
+                {
+                    bCount += charBlock[i].Count(c => c == '{');
+                    bCount -= charBlock[i].Count(c => c == '}');
+                    if (bCount == 0) { endIdx = i; break; }
+                }
+                if (endIdx != -1) charBlock.RemoveRange(playableIdx, endIdx - playableIdx + 1);
+            }
+
+            int aliveDataStartIndex = charBlock.FindIndex(l => l.Trim() == "alive_data={");
+            if (aliveDataStartIndex != -1)
+            {
+                int aliveDataEndIndex = -1;
+                int aliveBraceCount = 0;
+                for (int i = aliveDataStartIndex; i < charBlock.Count; i++)
+                {
+                    aliveBraceCount += charBlock[i].Count(c => c == '{');
+                    aliveBraceCount -= charBlock[i].Count(c => c == '}');
+                    if (aliveBraceCount == 0)
+                    {
+                        aliveDataEndIndex = i;
+                        break;
+                    }
+                }
+                if (aliveDataEndIndex != -1)
+                {
+                    charBlock.RemoveRange(aliveDataStartIndex, aliveDataEndIndex - aliveDataStartIndex + 1);
+                }
+            }
+
+            int closingBraceIndex = charBlock.FindLastIndex(l => l.Trim() == "}");
+            if (closingBraceIndex != -1)
+            {
+                charBlock.Insert(closingBraceIndex, "\tdead_data={");
+                charBlock.Insert(closingBraceIndex + 1, $"\t\tdate={Date.Year}.{Date.Month}.{Date.Day}");
+                charBlock.Insert(closingBraceIndex + 2, "\t\treason=death_battle");
+                charBlock.Insert(closingBraceIndex + 3, "\t}");
+            }
         }
 
         private static void ExtractSuccessionData(string slainCharId, List<string> charBlock)
@@ -770,81 +880,7 @@ namespace CrusaderWars.data.battle_results
                             if (isSlain)
                             {
                                 Program.Logger.Debug($"Character {char_id} was slain. Adding dead_data block and removing alive_data and landed_data blocks.");
-
-                                // Remove landed_data
-                                int landedIdx = charBlock.FindIndex(l => l.Trim() == "landed_data={");
-                                if (landedIdx != -1)
-                                {
-                                    int bCount = 0;
-                                    int endIdx = -1;
-                                    for (int i = landedIdx; i < charBlock.Count; i++)
-                                    {
-                                        bCount += charBlock[i].Count(c => c == '{');
-                                        bCount -= charBlock[i].Count(c => c == '}');
-                                        if (bCount == 0) { endIdx = i; break; }
-                                    }
-                                    if (endIdx != -1) charBlock.RemoveRange(landedIdx, endIdx - landedIdx + 1);
-                                }
-
-                                // Remove court_data
-                                int courtIdx = charBlock.FindIndex(l => l.Trim() == "court_data={");
-                                if (courtIdx != -1)
-                                {
-                                    int bCount = 0;
-                                    int endIdx = -1;
-                                    for (int i = courtIdx; i < charBlock.Count; i++)
-                                    {
-                                        bCount += charBlock[i].Count(c => c == '{');
-                                        bCount -= charBlock[i].Count(c => c == '}');
-                                        if (bCount == 0) { endIdx = i; break; }
-                                    }
-                                    if (endIdx != -1) charBlock.RemoveRange(courtIdx, endIdx - courtIdx + 1);
-                                }
-
-                                // Remove playable_data
-                                int playableIdx = charBlock.FindIndex(l => l.Trim() == "playable_data={");
-                                if (playableIdx != -1)
-                                {
-                                    int bCount = 0;
-                                    int endIdx = -1;
-                                    for (int i = playableIdx; i < charBlock.Count; i++)
-                                    {
-                                        bCount += charBlock[i].Count(c => c == '{');
-                                        bCount -= charBlock[i].Count(c => c == '}');
-                                        if (bCount == 0) { endIdx = i; break; }
-                                    }
-                                    if (endIdx != -1) charBlock.RemoveRange(playableIdx, endIdx - playableIdx + 1);
-                                }
-
-                                int aliveDataStartIndex = charBlock.FindIndex(l => l.Trim() == "alive_data={");
-                                if (aliveDataStartIndex != -1)
-                                {
-                                    int aliveDataEndIndex = -1;
-                                    int aliveBraceCount = 0;
-                                    for (int i = aliveDataStartIndex; i < charBlock.Count; i++)
-                                    {
-                                        aliveBraceCount += charBlock[i].Count(c => c == '{');
-                                        aliveBraceCount -= charBlock[i].Count(c => c == '}');
-                                        if (aliveBraceCount == 0)
-                                        {
-                                            aliveDataEndIndex = i;
-                                            break;
-                                        }
-                                    }
-                                    if (aliveDataEndIndex != -1)
-                                    {
-                                        charBlock.RemoveRange(aliveDataStartIndex, aliveDataEndIndex - aliveDataStartIndex + 1);
-                                    }
-                                }
-
-                                int closingBraceIndex = charBlock.FindLastIndex(l => l.Trim() == "}");
-                                if (closingBraceIndex != -1)
-                                {
-                                    charBlock.Insert(closingBraceIndex, "\tdead_data={");
-                                    charBlock.Insert(closingBraceIndex + 1, $"\t\tdate={Date.Year}.{Date.Month}.{Date.Day}");
-                                    charBlock.Insert(closingBraceIndex + 2, "\t\treason=death_battle");
-                                    charBlock.Insert(closingBraceIndex + 3, "\t}");
-                                }
+                                MarkCharacterBlockAsDead(charBlock);
                             }
                             else // Not slain, but could be wounded and/or captured
                             {
@@ -923,6 +959,9 @@ namespace CrusaderWars.data.battle_results
                                 }
                             }
                         }
+
+                        // Slain dragons die, and riders who survived their fall are permanently injured
+                        DragonSystem.EditCharacterBlock(char_id, charBlock);
 
                         if (playerIsSlain && playerHeirId != null && char_id == playerHeirId)
                         {

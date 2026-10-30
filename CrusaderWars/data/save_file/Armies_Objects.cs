@@ -237,7 +237,8 @@ namespace CrusaderWars.data.save_file
         MenAtArms,
         Levy,
         Knight,
-        Garrison // Added Garrison regiment type
+        Garrison, // Added Garrison regiment type
+        Dragon // AGOT dragon ridden by a commander or knight
     };
 
     public class ArmyRegiment
