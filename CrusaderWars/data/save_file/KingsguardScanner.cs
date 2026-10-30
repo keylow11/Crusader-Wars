@@ -8,11 +8,15 @@ namespace CrusaderWars.data.save_file
     /// <summary>
     /// Finds the members of the AGOT Kingsguard in a CK3 save.
     ///
-    /// AGOT models the Kingsguard as council positions: "kingsguard_lord_commander"
-    /// and "kingsguard_1" .. "kingsguard_N". This scanner runs alongside the normal
-    /// save read, one line at a time, and does not depend on the name of the
-    /// top-level block that holds council data. It recognises a position key in
-    /// any of these shapes:
+    /// AGOT keeps the Kingsguard seats as variables on the Iron Throne title
+    /// (h_the_iron_throne), one per seat, each pointing at the knight in it:
+    ///   variables={ data={ {
+    ///       flag="kingsguard_lord_commander"
+    ///       data={ type=character identity=67237715 }
+    ///     } { flag="kingsguard_1" data={ type=character identity=33719803 } } ... } }
+    /// (confirmed against a CK3 1.19 AGOT save). This scanner runs alongside the
+    /// normal save read, one line at a time, and does not depend on the name of
+    /// any enclosing block. Besides that layout it also accepts, as fallbacks:
     ///   - a block with position="kingsguard_1" and a councillor=/character=/holder=
     ///     style field for the member's character ID (the field may also sit in the
     ///     block directly around it);
@@ -39,6 +43,9 @@ namespace CrusaderWars.data.save_file
             public bool PositionFromChild;
             public string? CouncilTask;
             public Dictionary<string, string>? Ids;
+            // A variable value block: data={ type=character identity=ID }
+            public bool TypeIsCharacter;
+            public string? Identity;
         }
 
         private static readonly Stack<Frame> _stack = new Stack<Frame>();
@@ -126,6 +133,18 @@ namespace CrusaderWars.data.save_file
                 return;
             }
 
+            if (field == "type" && value.Trim('"') == "character")
+            {
+                f.TypeIsCharacter = true;
+                return;
+            }
+
+            if (field == "identity" && IsId(value))
+            {
+                f.Identity = value;
+                return;
+            }
+
             if (Array.IndexOf(CharacterFields, field) >= 0 && IsId(value))
             {
                 if (f.Ids == null) f.Ids = new Dictionary<string, string>();
@@ -161,6 +180,14 @@ namespace CrusaderWars.data.save_file
             Frame f = _stack.Pop();
             Frame? parent = _stack.Count > 0 ? _stack.Peek() : null;
 
+            // data={ type=character identity=ID } is the value of the variable around it:
+            // give the ID to that variable's block, where the seat name (flag=) lives.
+            if (f.TypeIsCharacter && f.Identity != null && parent != null)
+            {
+                if (parent.Ids == null) parent.Ids = new Dictionary<string, string>();
+                if (!parent.Ids.ContainsKey("identity")) parent.Ids["identity"] = f.Identity;
+            }
+
             if (f.Position != null)
             {
                 string? id = FindCharacterId(f);
@@ -190,6 +217,7 @@ namespace CrusaderWars.data.save_file
         private static string? FindCharacterId(Frame f)
         {
             if (f.Ids == null) return null;
+            if (f.Ids.TryGetValue("identity", out var variableTarget)) return variableTarget;
             foreach (var name in CharacterFields)
             {
                 if (f.Ids.TryGetValue(name, out var id)) return id;
