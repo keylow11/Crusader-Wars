@@ -5,16 +5,26 @@
   Copy this file into the AGOT unit mapper folder (next to Mods.xml) and rename it to Dragons.xml.
   Without Dragons.xml, or with an empty Dragon key, dragons are disabled and battles work as before.
 
-  A commander or knight with one of the rider traits brings their dragon as a separate unit.
+  A commander or knight brings their dragon as a separate unit when they have one of the rider traits
+  AND a living dragon names them as its current rider. Dragons can pass to a new rider in CK3, so this
+  is read from the save before every battle: the new rider gets the dragon, the old one does not.
   If the dragon unit is wiped out in Attila, the dragon character dies in the CK3 save and its
-  rider is either slain (slain_chance %) or permanently injured (maimed, one legged, one eyed or disfigured).
+  rider is either slain (slain_chance %) or permanently injured (maimed, one legged, one eyed or disfigured)
+  and becomes dragonless. If a rider dies but their dragon lives, the dragon loses its rider so
+  another character can claim it.
 -->
 <Dragons>
   <!-- CK3 trait key(s) that mark a dragon rider. Add one line per trait. -->
   <RiderTrait key="dragonrider"/>
 
+  <!-- Trait a rider gets in place of the rider trait when their dragon dies -->
+  <DragonlessTrait key="dragonless_dragonrider"/>
+
   <!-- Character variable on the rider that points to their dragon character -->
   <DragonVariable name="current_dragon"/>
+
+  <!-- Character variable on the dragon that points to its current rider -->
+  <RiderVariable name="current_rider"/>
 
   <!-- Seven Kingdoms Attila unit the dragon becomes. Fill in the unit key. -->
   <Dragon key="" soldiers="1" experience="5"/>

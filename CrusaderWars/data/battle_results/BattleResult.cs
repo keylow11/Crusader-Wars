@@ -473,8 +473,6 @@ namespace CrusaderWars.data.battle_results
                             // A rider whose dragon was slain may die in the fall
                             if (DragonSystem.LostDragon(char_id))
                             {
-                                DragonSystem.ReadDragonCharacterID(char_id, charBlock);
-
                                 if (DragonSystem.ShouldRiderDie(char_id))
                                 {
                                     bool alreadySlain = (searchData.isCommander && searchData.commander != null && searchData.commander.IsSlain) ||
@@ -747,6 +745,14 @@ namespace CrusaderWars.data.battle_results
 
             // --- Update Opinions for slain characters ---
             EditOpinionsFile(allArmies);
+
+            // --- Dragons of slain riders lose their rider, so they can pass to someone new ---
+            foreach (string riderId in DragonSystem.GetLinkedRiderIDs())
+            {
+                var riderSearch = SearchCharacters(riderId, allArmies);
+                bool riderSlain = (riderSearch.isCommander && riderSearch.commander != null && riderSearch.commander.IsSlain) || (riderSearch.isKnight && riderSearch.knight != null && riderSearch.knight.HasFallen());
+                if (riderSlain) DragonSystem.SetRiderSlain(riderId);
+            }
 
             // --- Apply changes and write to temp file ---
             Program.Logger.Debug("Living file: Applying pre-determined fates...");
